@@ -1,0 +1,182 @@
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"unicode"
+)
+
+const initSize int = 50
+
+type Stack struct { //定义栈
+	size int64      //大小
+	top  int64      //栈顶
+	data [50]string //容器
+}
+
+//初始化栈
+func Initstack() Stack {
+	s := Stack{}
+	s.size = 50
+	s.top = -1
+
+	return s
+}
+
+//判断栈是否空
+func (s *Stack) IsEmpty() bool {
+	return s.top == -1
+}
+
+//判断栈是否满
+func (s *Stack) IsFull() bool {
+	return s.top == s.size
+}
+
+//入栈
+func (s *Stack) Pushstack(data string) bool {
+	if s.IsFull() {
+		fmt.Println("stack is full!")
+		return false
+	}
+	s.top++
+	s.data[s.top] = data
+	return true
+}
+
+//出栈
+func (s *Stack) Popstack() string {
+	if s.IsEmpty() {
+		fmt.Println("stack is empty,pop error!")
+		return ""
+	}
+	tmp := s.data[s.top]
+	s.top--
+	return tmp
+}
+
+//取顶
+func (s *Stack) Gettop() string {
+	if s.IsEmpty() {
+		fmt.Println("stack is full,gettop fail")
+		return ""
+	}
+	return s.data[s.top]
+}
+
+//栈的长度
+func (s *Stack) lenstack() int64 {
+	length := s.top + 1
+	return length
+}
+
+//清空栈
+func (s *Stack) Clearstack() {
+	s.top = -1
+}
+
+//中缀转后缀表达式
+func midToPost(mid string) string {
+	stack := Initstack()
+	postexp := ""
+	length := len(mid)
+	//循环扫描中缀表达式的每一个字符
+	for i := 0; i < length; i++ {
+		ch := string(mid[i])
+		switch ch {
+		case " ":
+			continue
+		case "(":
+			stack.Pushstack("(")
+		case ")":
+			for !stack.IsEmpty() {
+				preChar := stack.Gettop()
+				if preChar == "(" {
+					stack.Popstack()
+					break
+				}
+				postexp += preChar
+				stack.Popstack()
+			}
+			//数字直接输出
+		case "0", "1", "2", "3", "4", "5", "6", "7", "8", "9":
+			j := i
+			digit := ""
+			for ; j < length && unicode.IsDigit(rune(mid[j])); j++ {
+				digit += string(mid[j])
+			}
+			postexp += digit
+			i = j - 1
+		default:
+			for !stack.IsEmpty() {
+				top := stack.Gettop()
+				if top == "(" || isLower(top, ch) {
+					break
+				}
+				postexp += top
+				stack.Popstack()
+			}
+			stack.Pushstack(ch)
+
+		}
+	}
+	for !stack.IsEmpty() {
+		postexp += stack.Popstack()
+	}
+	return postexp
+}
+
+//比较栈顶top与新的运算符号的优先级
+func isLower(top string, newTop string) bool {
+	switch top {
+	case "+", "-":
+		if newTop == "*" || newTop == "/" {
+			return true
+		}
+	case "(":
+		return true
+	}
+	return false
+}
+
+//计算最终的结果
+func calculate(postexp string) int {
+	stack := Initstack()
+	length := len(postexp)
+	var num int
+	for i := 0; i < length; i++ {
+		nextchar := string(postexp[i])
+		if unicode.IsDigit(rune(postexp[i])) {
+			stack.Pushstack(nextchar)
+		} else {
+			num1, _ := strconv.Atoi(stack.Popstack())
+			num2, _ := strconv.Atoi(stack.Popstack())
+			switch nextchar {
+			case "+":
+				num = num1 + num2
+			case "-":
+				num = num2 - num1
+			case "*":
+				num = num1 * num2
+			case "/":
+				num = num2 / num1
+			}
+
+			stack.Pushstack(strconv.Itoa(num))
+		}
+	}
+	result, _ := strconv.Atoi(stack.Gettop())
+	return result
+}
+
+func main() {
+	var pre string
+	fmt.Printf("请输入你要计算的式子")
+	fmt.Scanf("%s", &pre)
+	postexp := midToPost(pre)
+	fmt.Printf("后缀表达式为:%s\n", postexp)
+	fmt.Println("您的计算结果为:")
+	result := calculate(postexp)
+	fmt.Printf("%d\n", result)
+
+}
